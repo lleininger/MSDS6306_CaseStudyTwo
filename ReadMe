@@ -6,11 +6,14 @@ MSDS 6306
 
 December 8, 2018
 
+
 Case Study 2 Codebook
+
 
 Study Design:
 
 We used two data sets, a training and a validation, with data concerning attrition at a specific company. We used R and Excel to determine which explanatory variables were most significant in determining whether or not a person will leave the company. We then used those variables to build a KNN model to predict Attrition. Our models had an 88.7% accuracy and a 95% confidence of (84.5%, 92.0%) accuracy.
+
 
 Objects:
 
@@ -27,6 +30,7 @@ ABV_Median: Data frame consisting of the ABV median by state
 IBU_Median: Data frame consisting of the IBU median by state
 
 Q4: Data frame that merges ABV_Median and IBU_Median
+
 
 Functions:
 
@@ -59,6 +63,8 @@ Summary
 Cor.test
 
 Order
+
+
 
 Contact Information:
 
