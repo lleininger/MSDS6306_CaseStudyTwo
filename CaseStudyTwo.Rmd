@@ -7,67 +7,90 @@ output:
     keep_rmd: TRUE
 ---
 
+##### Visual plots
 ```{r, echo=TRUE}
-# library(ggplot2)
-# 
-# eda_test <- read.csv('CaseStudy2Validation.csv', stringsAsFactors = FALSE)
-# eda <- read.csv('CaseStudy2-data.csv', stringsAsFactors = FALSE)
-# eda_arranged <- eda[,c(1,3,2,4:length(names(eda)))]
-# 
-# plot_this <- function(data = eda_arranged)
-# {
-#  i = 3
-#  while (i <= length(names(data)))
-#  {
-#  Holder <- data.frame(table(data[,i], data[,2]))
-#  names(Holder) <- c("Variable", "Attrited", "Frequency")
-#  
-#   graph <- ggplot(Holder, aes(fill=Attrited, y=Frequency, x=Variable)) +  geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=90)) + ggtitle(paste("Attrition Rates in " , names(data[i]), sep="")) + xlab(paste(names(data[i]))) + ylab(paste(names(Holder[3]))) + theme(plot.title = element_text(hjust = 0.5))
-#   print(graph)
-#  i = i+1
-#  }
-# }
-# 
-# plot_this(eda_arranged)
+library(ggplot2)
+ 
+eda_test <- read.csv('CaseStudy2Validation.csv', stringsAsFactors = FALSE)
+eda <- read.csv('CaseStudy2-data.csv', stringsAsFactors = FALSE)
+eda_arranged <- eda[,c(1,3,2,4:length(names(eda)))]
+ 
+plot_this <- function(data = eda_arranged)
+{
+  i = 3
+  while (i <= length(names(data)))
+  {
+  Holder <- data.frame(table(data[,i], data[,2]))
+  names(Holder) <- c("Variable", "Attrited", "Frequency")
+  
+   graph <- ggplot(Holder, aes(fill=Attrited, y=Frequency, x=Variable)) +  geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=90)) + ggtitle(paste("Attrition Rates in " , names(data[i]), sep="")) + xlab(paste(names(data[i]))) + ylab(paste(names(Holder[3]))) + theme(plot.title = element_text(hjust = 0.5))
+   print(graph)
+  i = i+1
+  }
+}
+plot_this(eda_arranged)
+
+#DistanceFromHome
+ggplot(data=eda, aes(x=DistanceFromHome, color = Attrition)) + geom_histogram(position = "identity", aes(y = ..density..)) + geom_density(alpha=0.2) + labs(title="Histogram of Commute by Attrition") + theme(plot.title = element_text(hjust = 0.5))
+
+#MonthlyIncome
+ggplot(data=eda, aes(x=MonthlyIncome, color = Attrition)) + geom_histogram(position = "identity", aes(y = ..density..)) + geom_density(alpha=0.2) + labs(title="Histogram of Attrition by MonthlyIncome") + theme(plot.title = element_text(hjust = 0.5))
+
+
+library(corrplot)
+
+eda$Attrition1 <- ifelse(eda$Attrition == "Yes",1,0)
+numericVars <- which(sapply(eda, is.numeric))
+
+all_numVar <- eda[, numericVars]
+cor_numVar <- cor(all_numVar, use="pairwise.complete.obs") #correlations of all numeric variables
+
+# sort on decreasing correlations with SalePrice
+cor_sorted <- as.matrix(sort(cor_numVar[,'Attrition1'], decreasing = TRUE))
+# select only high corelations
+CorHigh <- names(which(apply(cor_sorted, 1, function(x) abs(x)>0.5)))
+#cor_numVar <- cor_numVar[CorHigh, CorHigh]
+
+#corrplot.mixed(cor_numVar, tl.col="black", tl.pos = "lt")
+
+corrplot(cor_numVar, method = "ellipse", tl.cex=0.5, na.label = "NA", na.label.col = "white", insig = "p-value")
+
 ```
 
-
-
-
-
-
-
-
-
-
-
-
+##### Using KNN and explanatory variables to predict
 ```{r}
 library(fastDummies)
 library(class)
 library(caret)
 
+#Reads in training and test datasets
 dfTrain <- read.csv('CaseStudy2-data.csv', stringsAsFactors = FALSE)
-dfVal <- read.csv('CaseStudy2Validation.csv', stringsAsFactors = FALSE)
-eda2 <- dummy_cols(dfTrain)
-eda_test2 <- dummy_cols(dfVal)
+dfTest <- read.csv('CaseStudy2Validation.csv', stringsAsFactors = FALSE)
 
-Extra_Train <- data.frame(cbind("JobLevel_1" <- ifelse(eda2$JobLevel == 1,1,0), "Environmental" <- ifelse(eda2$EnvironmentSatisfaction == 1,1,0), "LowIncome" <- ifelse(eda2$MonthlyIncome<3000,1,0), "HighIncome" <- ifelse(eda2$MonthlyIncome>8000,1,0), "LongDist" <- ifelse(eda2$DistanceFromHome>=14,1,0), "Young" <- ifelse(eda2$Age<30,1,0), "Educated"<-ifelse(eda2$Education==5,1,0)))
+#Adds dummy columns for nominal data to both training and test
+dfTrain2 <- dummy_cols(dfTrain)
+dfTest2 <- dummy_cols(dfTest)
 
-#"JobLevel_1" <- ifelse(eda2$JobLevel == 1,1,0)
+#Generates a dataframe with manually created training dummy variables
+Extra_Train <- data.frame(cbind("JobLevel_1" <- ifelse(dfTrain2$JobLevel == 1,1,0), "Environmental" <- ifelse(dfTrain2$EnvironmentSatisfaction == 1,1,0), "LowIncome" <- ifelse(dfTrain2$MonthlyIncome<3000,1,0), "HighIncome" <- ifelse(dfTrain2$MonthlyIncome>8000,1,0), "LongDist" <- ifelse(dfTrain2$DistanceFromHome>=11,1,0), "Young" <- ifelse(dfTrain2$Age<=30,1,0)))
 
-Training_Indicator <- cbind(subset(eda2, select=c("Department_Sales",  "MaritalStatus_Single", "OverTime_No", "OverTime_Yes")), Extra_Train)
-Training_Class <- dummy_cols(eda2$Attrition)[,2]
+#Dataframe to store training indicators
+Training_Indicator <- cbind(subset(dfTrain2, select=c("Department_Sales",  "MaritalStatus_Single", "OverTime_No", "OverTime_Yes")), Extra_Train)
 
-Extra_Test <- data.frame(cbind("JobLevel_1" <- ifelse(eda_test2$JobLevel == 1,1,0), "Environmental" <- ifelse(eda_test2$EnvironmentSatisfaction == 1,1,0), "LowIncome" <- ifelse(eda_test2$MonthlyIncome<3000,1,0), "HighIncome" <- ifelse(eda_test2$MonthlyIncome>8000,1,0), "LongDist" <- ifelse(eda_test2$DistanceFromHome>=14,1,0), "Young" <- ifelse(eda_test2$Age<30,1,0), "Educated"<-ifelse(eda_test2$Education==5,1,0)))
+#Dataframe to store training classifications
+Training_Class <- dummy_cols(dfTrain2$Attrition)[,2]
 
-eda_test2 <- dummy_cols(dfVal)
-Validation_Indicators <- cbind(subset(eda_test2, select=c("Department_Sales", "MaritalStatus_Single", "OverTime_No", "OverTime_Yes")),Extra_Test)
+#Generates a dataframe with manually created test dummy variables
+Extra_Test <- data.frame(cbind("JobLevel_1" <- ifelse(dfTest2$JobLevel == 1,1,0), "Environmental" <- ifelse(dfTest2$EnvironmentSatisfaction == 1,1,0), "LowIncome" <- ifelse(dfTest2$MonthlyIncome<3000,1,0), "HighIncome" <- ifelse(dfTest2$MonthlyIncome>8000,1,0), "LongDist" <- ifelse(dfTest2$DistanceFromHome>=11,1,0), "Young" <- ifelse(dfTest2$Age<=30,1,0)))
 
-Validation_Class <- as.data.frame(append(dummy_cols(dfVal$Attrition), dfVal))
-Validation <- Validation_Class$.data_Yes
+#Dataframe to store test indicators
+Validation_Indicators <- cbind(subset(dfTest2, select=c("Department_Sales", "MaritalStatus_Single", "OverTime_No", "OverTime_Yes")),Extra_Test)
 
-accuracies = c()
+#Dataframe to store training classifications
+Validation_Class <- as.data.frame(append(dummy_cols(dfTest$Attrition), dfTest))
+dfVal <- Validation_Class$.data_Yes
+
+#Function to iterate knn predictions and store the most accurate iteration
 Validate <- function(Training_Ind, Test_Ind, Training_Cl, Test_Cl)
 {
   i=1
@@ -94,41 +117,14 @@ Validate <- function(Training_Ind, Test_Ind, Training_Cl, Test_Cl)
     Predictions <- most_accurate_pred
     i=i+1
   }
-  
-  #paste("Average Accuracy:", most_accurate, sep = " ")
-  #print(accuracies)
-  
   dfPreds <- ifelse(Predictions == 1,"Yes","No")
   dfPreds <- as.data.frame(dfPreds)
-  dfPreds <- cbind(dfVal$ID, dfPreds)
-
+  dfPreds <- cbind(dfTest$ID, dfPreds)
   names(dfPreds) <- c("ID", "Prediction")
-
   write.csv(dfPreds,file="dfPreds", row.names=FALSE)
   confusionMatrix(table(Predictions, Test_Cl))
 }
 
-Validate(Training_Indicator, Validation_Indicators, Training_Class, Validation)
-
-library(corrplot)
-
-dfTrain$Attrition1 <- ifelse(dfTrain$Attrition == "Yes",1,0)
-numericVars <- which(sapply(dfTrain, is.numeric))
-
-all_numVar <- dfTrain[, numericVars]
-cor_numVar <- cor(all_numVar, use="pairwise.complete.obs") #correlations of all numeric variables
-
-# sort on decreasing correlations with SalePrice
-cor_sorted <- as.matrix(sort(cor_numVar[,'Attrition1'], decreasing = TRUE))
-# select only high corelations
-CorHigh <- names(which(apply(cor_sorted, 1, function(x) abs(x)>0.5)))
-#cor_numVar <- cor_numVar[CorHigh, CorHigh]
-
-#corrplot.mixed(cor_numVar, tl.col="black", tl.pos = "lt")
-
-corrplot(cor_numVar, method = "ellipse", tl.cex=0.5, na.label = "NA", na.label.col = "white", insig = "p-value")
-
-eda = read.csv("CaseStudy2-data.csv")
-ggplot(data=eda, aes(x=DistanceFromHome, color = Attrition)) + geom_histogram(position = "identity", aes(y = ..density..)) + geom_density(alpha=0.2) + labs(title="Histogram of Commute by Attrition") + theme(plot.title = element_text(hjust = 0.5))
-ggplot(data=eda, aes(x=MonthlyIncome, color = Attrition)) + geom_histogram(position = "identity", aes(y = ..density..)) + geom_density(alpha=0.2) + labs(title="Histogram of Attrition by MonthlyIncome") + theme(plot.title = element_text(hjust = 0.5))
+#Trains knn model using training and test values and writes predictions to dfPreds file
+Validate(Training_Indicator, Validation_Indicators, Training_Class, dfVal)
 ```

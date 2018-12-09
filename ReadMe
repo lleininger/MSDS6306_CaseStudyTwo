@@ -12,7 +12,7 @@ Case Study 2 Codebook
 
 Study Design:
 
-We used two data sets, a training and a validation, with data concerning attrition at a specific company. We used R and Excel to determine which explanatory variables were most significant in determining whether or not a person will leave the company. We then used those variables to build a KNN model to predict Attrition. Our models had an 88.7% accuracy and a 95% confidence of (84.5%, 92.0%) accuracy.
+We used two data sets containing explanatory variables and attrition data divided into a training and validation set. We used R and Excel to graphically and quantitatively determine which explanatory variables were most significant in determining an employee's departure, as well as to remove potential issues with multicollinearity. We then used those remaining variables to build a KNN model to predict Attrition. Our model yielded 88.7% accuracy with a 95% confidence interval of (84.5%, 92.0%) accuracy.
 
 
 Objects:
@@ -25,24 +25,46 @@ eda2: dfTrain with dummy columns
 
 eda_test2: testing (validation) data with dummy columns
 
-Extra_Test: adds explanatory variables
+Extra_Train: adds explanatory variables not otherwise covered by dummy columns (i.e. manually creates another dataframe of dummy variables)
 
-eda_test2: adds dummy variables to dfVal
+Training_Indicator: dataframe of training indicators used in knn predictive model
+
+Training_Class: dataframe of attrition = yes values for training data
+
+Extra_Test: adds explanatory variables not otherwise covered by dummy columns (i.e. manually creates another dataframe of dummy variables)
+
+Validation_Indicators: dataframe of test indicators used in knn predictive model
 
 Validation_Class: appends dfVal with dummy columns
 
-Validation: Validation_Class with data_Yes
+Validation: dataframe of attrition = yes values for test data
 
-p: knn function on Training_Ind and Test_Ind
+p: stores predictions of knn function on Validation_Indicators using Training_Indicator and Training_Class data
 
-dfPreds: make predictions
+cf: retrieves a confusion matrix on the predictions in p and the validation data
+
+accuracies: dataframe of accuracies stored in the ith iteration
+
+accuracy_check: stores current ith accuracy
+
+most_accurate: holds most accurate iteration accuracy value
+
+mode_accurate_pred: holds preductions for most accurate iteration
+
+Predictions: holds preductions for most accurate iteration
+
+dfPreds: Translates and stores attrition values for csv write
 
 
 Functions:
 
 dummy_cols
 
+data.frame
+
 cbind
+
+ifelse
 
 subset
 
