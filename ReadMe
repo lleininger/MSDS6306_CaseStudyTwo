@@ -17,53 +17,46 @@ We used two data sets, a training and a validation, with data concerning attriti
 
 Objects:
 
-Beers: Data frame from Beers.csv
+dfTrain: testing data
 
-Breweries: Data frame from Breweries.csv
+dfVal: testing(validation data)
 
-Q1: Data frame to show how many breweries per state
+eda2: dfTrain with dummy columns
 
-Beer_Data: Combined data frame to show all data from both Beers.CSV and Breweries.csv
+eda_test2: testing (validation) data with dummy columns
 
-ABV_Median: Data frame consisting of the ABV median by state
+Extra_Test: adds explanatory variables
 
-IBU_Median: Data frame consisting of the IBU median by state
+eda_test2: adds dummy variables to dfVal
 
-Q4: Data frame that merges ABV_Median and IBU_Median
+Validation_Class: appends dfVal with dummy columns
+
+Validation: Validation_Class with data_Yes
+
+p: knn function on Training_Ind and Test_Ind
+
+dfPreds: make predictions
 
 
 Functions:
 
-Which
+dummy_cols
 
-Dataframe
+cbind
 
-Read.csv
+subset
 
-Table
+append
 
-Merge
+while
 
-Head
+knn
 
-Tail
+write.csv
 
-Length
+confusionMatrix
 
-Class
-
-Aggregate
-
-Median
-
-Ggplot
-
-Summary
-
-Cor.test
-
-Order
-
+validate
 
 
 Contact Information:
