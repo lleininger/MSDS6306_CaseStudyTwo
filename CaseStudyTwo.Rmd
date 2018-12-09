@@ -7,41 +7,57 @@ output:
     keep_rmd: TRUE
 ---
 
+##### Visual plots
 ```{r, echo=TRUE}
-# library(ggplot2)
-# 
-# eda_test <- read.csv('CaseStudy2Validation.csv', stringsAsFactors = FALSE)
-# eda <- read.csv('CaseStudy2-data.csv', stringsAsFactors = FALSE)
-# eda_arranged <- eda[,c(1,3,2,4:length(names(eda)))]
-# 
-# plot_this <- function(data = eda_arranged)
-# {
-#  i = 3
-#  while (i <= length(names(data)))
-#  {
-#  Holder <- data.frame(table(data[,i], data[,2]))
-#  names(Holder) <- c("Variable", "Attrited", "Frequency")
-#  
-#   graph <- ggplot(Holder, aes(fill=Attrited, y=Frequency, x=Variable)) +  geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=90)) + ggtitle(paste("Attrition Rates in " , names(data[i]), sep="")) + xlab(paste(names(data[i]))) + ylab(paste(names(Holder[3]))) + theme(plot.title = element_text(hjust = 0.5))
-#   print(graph)
-#  i = i+1
-#  }
-# }
-# 
-# plot_this(eda_arranged)
+library(ggplot2)
+ 
+eda_test <- read.csv('CaseStudy2Validation.csv', stringsAsFactors = FALSE)
+eda <- read.csv('CaseStudy2-data.csv', stringsAsFactors = FALSE)
+eda_arranged <- eda[,c(1,3,2,4:length(names(eda)))]
+ 
+plot_this <- function(data = eda_arranged)
+{
+  i = 3
+  while (i <= length(names(data)))
+  {
+  Holder <- data.frame(table(data[,i], data[,2]))
+  names(Holder) <- c("Variable", "Attrited", "Frequency")
+  
+   graph <- ggplot(Holder, aes(fill=Attrited, y=Frequency, x=Variable)) +  geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=90)) + ggtitle(paste("Attrition Rates in " , names(data[i]), sep="")) + xlab(paste(names(data[i]))) + ylab(paste(names(Holder[3]))) + theme(plot.title = element_text(hjust = 0.5))
+   print(graph)
+  i = i+1
+  }
+}
+plot_this(eda_arranged)
+
+#DistanceFromHome
+ggplot(data=eda, aes(x=DistanceFromHome, color = Attrition)) + geom_histogram(position = "identity", aes(y = ..density..)) + geom_density(alpha=0.2) + labs(title="Histogram of Commute by Attrition") + theme(plot.title = element_text(hjust = 0.5))
+
+#MonthlyIncome
+ggplot(data=eda, aes(x=MonthlyIncome, color = Attrition)) + geom_histogram(position = "identity", aes(y = ..density..)) + geom_density(alpha=0.2) + labs(title="Histogram of Attrition by MonthlyIncome") + theme(plot.title = element_text(hjust = 0.5))
+
+
+library(corrplot)
+
+eda$Attrition1 <- ifelse(eda$Attrition == "Yes",1,0)
+numericVars <- which(sapply(eda, is.numeric))
+
+all_numVar <- eda[, numericVars]
+cor_numVar <- cor(all_numVar, use="pairwise.complete.obs") #correlations of all numeric variables
+
+# sort on decreasing correlations with SalePrice
+cor_sorted <- as.matrix(sort(cor_numVar[,'Attrition1'], decreasing = TRUE))
+# select only high corelations
+CorHigh <- names(which(apply(cor_sorted, 1, function(x) abs(x)>0.5)))
+#cor_numVar <- cor_numVar[CorHigh, CorHigh]
+
+#corrplot.mixed(cor_numVar, tl.col="black", tl.pos = "lt")
+
+corrplot(cor_numVar, method = "ellipse", tl.cex=0.5, na.label = "NA", na.label.col = "white", insig = "p-value")
+
 ```
 
-
-
-
-
-
-
-
-
-
-
-
+##### Using KNN and explanatory variables to predict
 ```{r}
 library(fastDummies)
 library(class)
@@ -109,26 +125,4 @@ Validate <- function(Training_Ind, Test_Ind, Training_Cl, Test_Cl)
 }
 
 Validate(Training_Indicator, Validation_Indicators, Training_Class, Validation)
-
-library(corrplot)
-
-dfTrain$Attrition1 <- ifelse(dfTrain$Attrition == "Yes",1,0)
-numericVars <- which(sapply(dfTrain, is.numeric))
-
-all_numVar <- dfTrain[, numericVars]
-cor_numVar <- cor(all_numVar, use="pairwise.complete.obs") #correlations of all numeric variables
-
-# sort on decreasing correlations with SalePrice
-cor_sorted <- as.matrix(sort(cor_numVar[,'Attrition1'], decreasing = TRUE))
-# select only high corelations
-CorHigh <- names(which(apply(cor_sorted, 1, function(x) abs(x)>0.5)))
-#cor_numVar <- cor_numVar[CorHigh, CorHigh]
-
-#corrplot.mixed(cor_numVar, tl.col="black", tl.pos = "lt")
-
-corrplot(cor_numVar, method = "ellipse", tl.cex=0.5, na.label = "NA", na.label.col = "white", insig = "p-value")
-
-eda = read.csv("CaseStudy2-data.csv")
-ggplot(data=eda, aes(x=DistanceFromHome, color = Attrition)) + geom_histogram(position = "identity", aes(y = ..density..)) + geom_density(alpha=0.2) + labs(title="Histogram of Commute by Attrition") + theme(plot.title = element_text(hjust = 0.5))
-ggplot(data=eda, aes(x=MonthlyIncome, color = Attrition)) + geom_histogram(position = "identity", aes(y = ..density..)) + geom_density(alpha=0.2) + labs(title="Histogram of Attrition by MonthlyIncome") + theme(plot.title = element_text(hjust = 0.5))
 ```
